@@ -2,25 +2,52 @@ package paradis.assignment3;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 
-public class Program1 implements Runnable{
+public class Program1 {
     final static int NUM_WEBPAGES = 40;
     private static WebPage[] webPages = new WebPage[NUM_WEBPAGES];
     // [You are welcome to add some variables.]
-    private static BlockingQueue<WebPage> queue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
+    private static BlockingQueue<WebPage> toDownloadQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
+    private static BlockingQueue<WebPage> toAnalyzeQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
+    private static BlockingQueue<WebPage> toCategorizeQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
+    private static ExecutorService executor = ForkJoinPool.commonPool();
 
     // [You are welcome to modify this method, but it should NOT be parallelized.]
     private static void initialize() {
         for (int i = 0; i < NUM_WEBPAGES; i++) {
             webPages[i] = new WebPage(i, "http://www.site.se/page" + i + ".html");
+            try {
+                toDownloadQueue.put((webPages[i]));
+            } catch (InterruptedException e) {
+
+            }
         }
     }
 
     // [Do modify this sequential part of the program.]
     private static void downloadWebPages() {
-        for (int i = 0; i < NUM_WEBPAGES; i++) {
-            webPages[i].download();
+
+        while (true) {
+            Runnable download = () -> {
+                try {
+                    WebPage webPage = toDownloadQueue.take();
+                    webPage.download();
+                    toAnalyzeQueue.add(webPage);
+
+                } catch (InterruptedException e) {
+                    System.out.printf(e.getMessage());
+                }
+            };
+            //WebPage webPageToDownLoad = toDownloadQueue.take();
+            //webPageToDownLoad.download();
+            executor.submit(download);
         }
+
+        //webPages[i].download();
+
+
     }
 
     // [Do modify this sequential part of the program.]
@@ -45,6 +72,8 @@ public class Program1 implements Runnable{
     }
 
     public static void main(String[] args) {
+
+
         // Initialize the list of webpages.
         initialize();
 
@@ -52,9 +81,11 @@ public class Program1 implements Runnable{
         long start = System.nanoTime();
 
         // Do the work.
+
         downloadWebPages();
-        analyzeWebPages();
-        categorizeWebPages();
+
+        //analyzeWebPages();
+        //categorizeWebPages();
 
         // Stop timing.
         long stop = System.nanoTime();
@@ -66,8 +97,5 @@ public class Program1 implements Runnable{
         System.out.println("Execution time (seconds): " + (stop - start) / 1.0E9);
     }
 
-    @Override
-    public void run() {
 
-    }
 }
