@@ -12,6 +12,7 @@ public class Program1 {
     private static BlockingQueue<WebPage> toDownloadQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
     private static BlockingQueue<WebPage> toAnalyzeQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
     private static BlockingQueue<WebPage> toCategorizeQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
+    private static BlockingQueue<WebPage> toPrintQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
     private static ExecutorService executor = ForkJoinPool.commonPool();
 
     // [You are welcome to modify this method, but it should NOT be parallelized.]
@@ -28,39 +29,49 @@ public class Program1 {
 
     // [Do modify this sequential part of the program.]
     private static void downloadWebPages() {
-
-        while (true) {
+        WebPage webPage = toDownloadQueue.poll();
+        if (webPage != null) {
             Runnable download = () -> {
+                webPage.download();
                 try {
-                    WebPage webPage = toDownloadQueue.take();
-                    webPage.download();
-                    toAnalyzeQueue.add(webPage);
-
+                    toAnalyzeQueue.put(webPage);
                 } catch (InterruptedException e) {
-                    System.out.printf(e.getMessage());
+                    e.printStackTrace();
                 }
             };
-            //WebPage webPageToDownLoad = toDownloadQueue.take();
-            //webPageToDownLoad.download();
             executor.submit(download);
         }
-
-        //webPages[i].download();
-
-
     }
 
     // [Do modify this sequential part of the program.]
     private static void analyzeWebPages() {
-        for (int i = 0; i < NUM_WEBPAGES; i++) {
-            webPages[i].analyze();
+        WebPage webPage = toAnalyzeQueue.poll();
+        if (webPage != null) {
+            Runnable analyze = () -> {
+                webPage.analyze();
+                try {
+                    toCategorizeQueue.put(webPage);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            };
+            executor.submit(analyze);
         }
     }
 
     // [Do modify this sequential part of the program.]
     private static void categorizeWebPages() {
-        for (int i = 0; i < NUM_WEBPAGES; i++) {
-            webPages[i].categorize();
+        WebPage webPage = toCategorizeQueue.poll();
+        if (webPage != null) {
+            Runnable categorize = () -> {
+                webPage.categorize();
+                try {
+                    toPrintQueue.put(webPage);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            };
+            executor.submit(categorize);
         }
     }
 
@@ -72,8 +83,6 @@ public class Program1 {
     }
 
     public static void main(String[] args) {
-
-
         // Initialize the list of webpages.
         initialize();
 
@@ -82,10 +91,11 @@ public class Program1 {
 
         // Do the work.
 
-        downloadWebPages();
-
-        //analyzeWebPages();
-        //categorizeWebPages();
+        while (toPrintQueue.size() < NUM_WEBPAGES) {
+            downloadWebPages();
+            analyzeWebPages();
+            categorizeWebPages();
+        }
 
         // Stop timing.
         long stop = System.nanoTime();
@@ -96,6 +106,4 @@ public class Program1 {
         // Present the execution time.
         System.out.println("Execution time (seconds): " + (stop - start) / 1.0E9);
     }
-
-
 }
