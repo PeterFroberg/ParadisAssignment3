@@ -16,25 +16,7 @@ public class Program2 {
     }
 
     // [Do modify this sequential part of the program.]
-    private static void downloadWebPages() {
-        for (int i = 0; i < NUM_WEBPAGES; i++) {
-            webPages.get(i).download();
-        }
-    }
 
-    // [Do modify this sequential part of the program.]
-    private static void analyzeWebPages() {
-        for (int i = 0; i < NUM_WEBPAGES; i++) {
-            webPages.get(i).analyze();
-        }
-    }
-
-    // [Do modify this sequential part of the program.]
-    private static void categorizeWebPages() {
-        for (int i = 0; i < NUM_WEBPAGES; i++) {
-            webPages.get(i).categorize();
-        }
-    }
 
     // [You are welcome to modify this method, but it should NOT be parallelized.]
     private static void presentResult() {
@@ -58,9 +40,6 @@ public class Program2 {
 
         // Do the work.
         webPages.parallelStream().forEach(Program2::letTheMAgicHappen);
-        //downloadWebPages();
-        //analyzeWebPages();
-        //categorizeWebPages();
 
         // Stop timing.
         long stop = System.nanoTime();
