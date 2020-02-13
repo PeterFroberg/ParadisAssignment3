@@ -1,3 +1,5 @@
+Peter Fröberg, pefr7147
+
 Question1: Which of the two programs, Program1 and Program2, has best performance, or are the
 performance of the two programs about the same?
 Program 2 have better performance
