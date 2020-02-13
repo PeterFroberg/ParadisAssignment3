@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 public class Program1 {
-    final static int NUM_WEBPAGES = 40;
+    final static int NUM_WEBPAGES = 500;
     private static WebPage[] webPages = new WebPage[NUM_WEBPAGES];
     // [You are welcome to add some variables.]
     private static BlockingQueue<WebPage> toDownloadQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);

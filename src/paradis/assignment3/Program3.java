@@ -5,73 +5,63 @@ import java.util.List;
 import java.util.concurrent.*;
 
 public class Program3 {
-    final static int NUM_WEBPAGES = 40;
+    private static int NUM_THREADS = 3;
+    final static int NUM_WEBPAGES = 500;
     private static WebPage[] webPages = new WebPage[NUM_WEBPAGES];
     // [You are welcome to add some variables.]
     private static LinkedBlockingQueue<WebPage> toDownloadQueue = new LinkedBlockingQueue<WebPage>();
     private static LinkedBlockingQueue<WebPage> toAnalyzeQueue = new LinkedBlockingQueue<WebPage>();
     private static LinkedBlockingQueue<WebPage> toCategorizeQueue = new LinkedBlockingQueue<WebPage>();
     private static LinkedBlockingQueue<WebPage> toPrintQueue = new LinkedBlockingQueue<WebPage>();
-    private static ExecutorService executor = ForkJoinPool.commonPool();
+    private static MyExecutor myExecutor = new MyExecutor(NUM_THREADS);
     private static LinkedBlockingQueue<Runnable> runnables = new LinkedBlockingQueue<>();
 
     // [You are welcome to modify this method, but it should NOT be parallelized.]
     private static void initialize() {
         for (int i = 0; i < NUM_WEBPAGES; i++) {
             webPages[i] = new WebPage(i, "http://www.site.se/page" + i + ".html");
-            try {
-                toDownloadQueue.put((webPages[i]));
-            } catch (InterruptedException e) {
-
-            }
+            toDownloadQueue.add(webPages[i]);
         }
     }
 
     // [Do modify this sequential part of the program.]
+
     private static void downloadWebPages() {
-        WebPage webPage = toDownloadQueue.poll();
+        WebPage webPage;
+        webPage = toDownloadQueue.poll();
         if (webPage != null) {
             Runnable download = () -> {
                 webPage.download();
-                try {
-                    toAnalyzeQueue.put(webPage);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                toAnalyzeQueue.add(webPage);
             };
-            executor.submit(download);
+            myExecutor.execute(download);
         }
     }
 
+
     // [Do modify this sequential part of the program.]
     private static void analyzeWebPages() {
-        WebPage webPage = toAnalyzeQueue.poll();
+        WebPage webPage;
+        webPage = toAnalyzeQueue.poll();
         if (webPage != null) {
             Runnable analyze = () -> {
                 webPage.analyze();
-                try {
-                    toCategorizeQueue.put(webPage);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                toCategorizeQueue.add(webPage);
             };
-            executor.submit(analyze);
+            myExecutor.execute(analyze);
         }
     }
 
     // [Do modify this sequential part of the program.]
     private static void categorizeWebPages() {
-        WebPage webPage = toCategorizeQueue.poll();
+        WebPage webPage;
+        webPage = toCategorizeQueue.poll();
         if (webPage != null) {
             Runnable categorize = () -> {
                 webPage.categorize();
-                try {
-                    toPrintQueue.put(webPage);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                toPrintQueue.add(webPage);
             };
-            executor.submit(categorize);
+            myExecutor.execute(categorize);
         }
     }
 
@@ -84,23 +74,18 @@ public class Program3 {
 
     private static class MyExecutor implements ExecutorService {
         boolean running;
-
         Thread[] threads;
-
-
         public MyExecutor(int numThreads) {
             threads = new Thread[numThreads];
             for (int i = 0; i < threads.length; i++) {
                 threads[i] = new Thread();
             }
             initiateThreads();
-
         }
 
         @Override
         public void shutdown() {
             running = false;
-
         }
 
 
@@ -162,15 +147,6 @@ public class Program3 {
         @Override
         public void execute(Runnable runnable) {
             runnables.add(runnable);
-/*            runnable.run();
-            for (int i = 0; i < threads.length; i++) {
-                if (threads[i] == null || !threads[i].isAlive()) {
-                    threads[i] = new Thread(runnable);
-                    threads[i].start();
-                }
-            }*/
-
-
         }
 
         public void initiateThreads() {
@@ -184,29 +160,13 @@ public class Program3 {
                             Runnable runnable1 = runnables.poll();
                             if (runnable1 != null)
                                 runnable1.run();
-
                         }
-
-
                     };
                     runnable.run();
-
                 });
                 threads[i].start();
-
             }
-
         }
-
-/*        public void runRunnables() throws InterruptedException {
-            Runnable runnable = runnables.take();
-            for (Thread thread : threads){
-                if(!thread.isAlive()){
-                    thread = new Thread(runnable).start();
-                }
-            }
-            runnable.run();
-        }*/
     }
 
 
@@ -224,6 +184,8 @@ public class Program3 {
             analyzeWebPages();
             categorizeWebPages();
         }
+
+        myExecutor.shutdown();
 
         // Stop timing.
         long stop = System.nanoTime();

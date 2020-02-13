@@ -1,0 +1,21 @@
+Question1: Which of the two programs, Program1 and Program2, has best performance, or are the
+performance of the two programs about the same?
+Program 2 have better performance
+
+
+Question2: Is there any difference in which order different work tasks are performed in the two
+different solutions, Program1 and Program2?
+In program1 a loop is used to run the three different tasks (download, analyze, categorize) until all webpages are moved to the last queue (ToPrintQueue)
+Each thread performs one task at a time and move the webpage to the next queue to be picked up from that queue by a thread
+The download "task" picks up (If there is a webpage in the toDownLoadQueue) one webpage from the toDownloadQueue and downloads the webpage
+and put it in the next queue (toAnalyzequeue). The analyze "task" picks up one webpage from the ToAnalyzeQueue (If there is a webpage in the
+ToAnalyzeQueue) and perform the analysis of the webpage and put it in the ToCategorizeQueue. The Categorize "task" pick up one webpage from
+the toCategorizeQueue (If there is a webpage in the toCategorizequeue) and categorize the webpage and put it in the Toprintqueue.
+If not all the web pages have arrived in the toPrintqueue the loop run one more turn. until all webpages are in the toprintQueue.
+Program 2 each thread pick up an webpage from the toDownloadQueue and process all three task for that webpage and the puts it in the ToPrintQueue.
+And the thread then picks up a new webpage to process all tasks befor it pick up a new webpage
+
+
+Question3: Which of the two programs, Program1 and Program3, has best performance, or are the
+performance of the two programs about the same?
+They are about the same
