@@ -1,19 +1,19 @@
 package paradis.assignment3;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.*;
 
 public class Program3 {
     final static int NUM_WEBPAGES = 40;
     private static WebPage[] webPages = new WebPage[NUM_WEBPAGES];
     // [You are welcome to add some variables.]
-    private static BlockingQueue<WebPage> toDownloadQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
-    private static BlockingQueue<WebPage> toAnalyzeQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
-    private static BlockingQueue<WebPage> toCategorizeQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
-    private static BlockingQueue<WebPage> toPrintQueue = new ArrayBlockingQueue<WebPage>(NUM_WEBPAGES);
+    private static LinkedBlockingQueue<WebPage> toDownloadQueue = new LinkedBlockingQueue<WebPage>();
+    private static LinkedBlockingQueue<WebPage> toAnalyzeQueue = new LinkedBlockingQueue<WebPage>();
+    private static LinkedBlockingQueue<WebPage> toCategorizeQueue = new LinkedBlockingQueue<WebPage>();
+    private static LinkedBlockingQueue<WebPage> toPrintQueue = new LinkedBlockingQueue<WebPage>();
     private static ExecutorService executor = ForkJoinPool.commonPool();
+    private static LinkedBlockingQueue<Runnable> runnables = new LinkedBlockingQueue<>();
 
     // [You are welcome to modify this method, but it should NOT be parallelized.]
     private static void initialize() {
@@ -81,6 +81,134 @@ public class Program3 {
             System.out.println(webPages[i]);
         }
     }
+
+    private static class MyExecutor implements ExecutorService {
+        boolean running;
+
+        Thread[] threads;
+
+
+        public MyExecutor(int numThreads) {
+            threads = new Thread[numThreads];
+            for (int i = 0; i < threads.length; i++) {
+                threads[i] = new Thread();
+            }
+            initiateThreads();
+
+        }
+
+        @Override
+        public void shutdown() {
+            running = false;
+
+        }
+
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            return null;
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return false;
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return false;
+        }
+
+        @Override
+        public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
+            return false;
+        }
+
+        @Override
+        public <T> Future<T> submit(Callable<T> callable) {
+            return null;
+        }
+
+        @Override
+        public <T> Future<T> submit(Runnable runnable, T t) {
+            return null;
+        }
+
+        @Override
+        public Future<?> submit(Runnable runnable) {
+            return null;
+        }
+
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection) throws InterruptedException {
+            return null;
+        }
+
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit) throws InterruptedException {
+            return null;
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> collection) throws InterruptedException, ExecutionException {
+            return null;
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
+        }
+
+        @Override
+        public void execute(Runnable runnable) {
+            runnables.add(runnable);
+/*            runnable.run();
+            for (int i = 0; i < threads.length; i++) {
+                if (threads[i] == null || !threads[i].isAlive()) {
+                    threads[i] = new Thread(runnable);
+                    threads[i].start();
+                }
+            }*/
+
+
+        }
+
+        public void initiateThreads() {
+            running = true;
+            for (int i = 0; i < threads.length; i++) {
+                threads[i] = new Thread(() -> {
+                    Runnable runnable = () -> {
+                        System.out.println("init");
+                        while (running) {
+
+                            Runnable runnable1 = runnables.poll();
+                            if (runnable1 != null)
+                                runnable1.run();
+
+                        }
+
+
+                    };
+                    runnable.run();
+
+                });
+                threads[i].start();
+
+            }
+
+        }
+
+/*        public void runRunnables() throws InterruptedException {
+            Runnable runnable = runnables.take();
+            for (Thread thread : threads){
+                if(!thread.isAlive()){
+                    thread = new Thread(runnable).start();
+                }
+            }
+            runnable.run();
+        }*/
+    }
+
 
     public static void main(String[] args) {
         // Initialize the list of webpages.
